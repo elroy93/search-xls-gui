@@ -2,7 +2,7 @@ import sys
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Generator
-
+import xlwings as xw
 from PySide6.QtCore import Signal, Qt
 from PySide6.QtWidgets import QApplication, QMainWindow, QFileDialog, QTableWidgetItem, QHeaderView
 
@@ -67,7 +67,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.error("please select a dir")
             return
         search_text = self.le_input_search_text.text()
-        files = get_all_files_recursively_xls(dir_path)
+        file_filter = self.le_input_file_filter.text()
+        print("filter_filter = " + file_filter)
+        files = get_all_files_recursively_xls(dir_path, file_filter)
+
         params = SearchParams(dir_path=dir_path,
                               search_text=search_text,
                               is_strict=False,
@@ -82,16 +85,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.info("table_widget.rowCount() = " + str(table_widget.rowCount()))
         if table_widget.rowCount() == 0:
             headers = ("path", "sheet", "cell", "cell_value")
+            colum_width_ratio = (4,1,1,1)
             table_widget.setColumnCount(len(headers))
             table_widget.setHorizontalHeaderLabels(headers)
             table_widget.horizontalHeader().setStyleSheet("QHeaderView::section { background-color: lightgrey }")
-            # 使每列宽度自动调整以填充表格宽度
-            header = table_widget.horizontalHeader()
-            # 为大部分列设置ResizeToContents模式
-            header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
-            for i in range(1, table_widget.columnCount()):
-                header.setSectionResizeMode(i, QHeaderView.ResizeMode.ResizeToContents)
-                header.setMinimumSectionSize(120)
+            table_widget.horizontalHeader().setStretchLastSection(True)
+
+            # colum_width_ratio求和
+            for i in range(0, len(headers)):
+                table_widget.setColumnWidth(i, 1.0 * colum_width_ratio[i] / sum(colum_width_ratio) * table_widget.width())  # Use 'i' instead of '0'
+                table_widget.horizontalHeader().setSectionResizeMode(i, QHeaderView.ResizeMode.Interactive)
 
         rowCount = table_widget.rowCount()
         table_widget.setRowCount(rowCount + 1)
@@ -102,17 +105,67 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             item.setToolTip(str(cell_value))
             table_widget.setItem(rowCount, i, item)
 
-
     def do_search(self, params: SearchParams):
-        for file in params.files:
-            self.info(f"searching {file}")
-            pass
+
+        # 搜索dir下面的xls/xlsx文件, 并且按照search_text搜索
+        # 搜索文件的内容, 并且将搜索结果写入到table_search_result中
+        # 搜索的结果是一个FoundCell对象, 包含了path, sheet, cell, cell_value
+
         self.ui_write_to_table(
-            FoundCell(path="测试测试测试测试测试测试测试测试测试测试测试测试测试测试测试测试测试测试测试测试测试测试测试测试测试测试测试测试测试测试测试测试测试测试测试测试测试测试",
+            FoundCell(path="测试测试测试测试测试测试测试测试测试测试测试测试",
                       sheet="测试测试测试", cell="测试", cell_value="测试"))
 
+        #     with xw.App(visible=False) as app:
+        #         workbook = app.books.open(file_path)
+        #
+        #         for sheet in workbook.sheets:
+        #             first_cell = sheet.api.UsedRange.Find(What=search_text, LookAt=1 if is_strict else 2, MatchCase=match_case)
+        #             if first_cell is not None:
+        #                 cell = first_cell
+        #                 while True:
+        #                     address = cell.GetAddress()
+        #                     value = cell.Value
+        #                     msg = f"\t {search_text} : {file_path} {sheet.name} - {address}"
+        #                     print(msg)
+        #                     found_list.append((sheet.name, address, value))
+        #
+        #                     cell = sheet.api.UsedRange.FindNext(cell)
+        #                     if not cell or cell.GetAddress() == first_cell.GetAddress():
+        #                         break
+        #
+        #         workbook.close()
+        #
+        #     return found_list
+        # found_list = []
+        with xw.App(visible=False) as app:
+            for file_path in params.files:
+                self.info(f"searching {file_path}")
+                workbook = app.books.open(file_path)
+
+                for sheet in workbook.sheets:
+                    first_cell = sheet.api.UsedRange.Find(What=params.search_text, LookAt=1 if params.is_strict else 2,
+                                                          MatchCase=params.match_case)
+                    if first_cell is not None:
+                        cell = first_cell
+                        while True:
+                            address = cell.GetAddress()
+                            value = cell.Value
+                            msg = f"\t {params.search_text} : {file_path} {sheet.name} - {address}"
+                            print(msg)
+                            # 写入到FoundCell
+                            self.ui_write_to_table(
+                                FoundCell(path=file_path,
+                                          sheet=sheet.name,
+                                          cell=address,
+                                          cell_value=value))
+                            # found_list.append((sheet.name, address, value))
+                            cell = sheet.api.UsedRange.FindNext(cell)
+                            if not cell or cell.GetAddress() == first_cell.GetAddress():
+                                break
+                workbook.close()
+
     def info(self, text):
-        self.singal_log_info.emit(text)
+            self.singal_log_info.emit(text)
 
     def error(self, text):
         self.singal_log_error.emit(text)
