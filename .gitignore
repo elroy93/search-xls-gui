@@ -1,5 +1,4 @@
-/build/
-/env/
-/build/*/*
-/dist/
-/env/
+build/
+env/
+dist/
+.idea/
