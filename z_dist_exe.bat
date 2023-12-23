@@ -17,20 +17,15 @@ echo Setup complete.
 
 del search_xls_gui.exe
 ::删除上级目录下的 search_xls_gui.exe 文件
-del ..\search_xls_gui.exe
-
 :: 使用页面
 :: auto-py-to-exe
 
-pyinstaller --noconfirm --onefile --console --icon "./resource/search.ico" --distpath "." "./src/search_xls_gui.py" --noconsole
+:: pyinstaller --noconfirm --onefile --console --icon "./resource/search.ico" --distpath "." "./src/search_xls_gui.py" --noconsole
+pyinstaller search_xls_gui.spec
 
-:: 删除当前文件夹下的 search_xls_gui.spec 文件
-del search_xls_gui.spec
-:: 当前文件夹下的 search_xls_gui.exe copy到上一级目录
-copy search_xls_gui.exe ..
+move dist/search_xls_gui.exe ./
 
 :: 退出当前的虚拟环境
-
 echo Deactivating virtual environment...
 deactivate
 

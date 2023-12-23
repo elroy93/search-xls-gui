@@ -26,6 +26,9 @@ class Ui_MainWindow(object):
         if not MainWindow.objectName():
             MainWindow.setObjectName(u"MainWindow")
         MainWindow.resize(1158, 682)
+        icon = QIcon()
+        icon.addFile(u"../../resource/search.ico", QSize(), QIcon.Normal, QIcon.Off)
+        MainWindow.setWindowIcon(icon)
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
         sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
@@ -75,15 +78,15 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout = QHBoxLayout()
         self.horizontalLayout.setObjectName(u"horizontalLayout")
-        self.checkBox_2 = QCheckBox(self.centralwidget)
-        self.checkBox_2.setObjectName(u"checkBox_2")
+        self.cb_is_strict = QCheckBox(self.centralwidget)
+        self.cb_is_strict.setObjectName(u"cb_is_strict")
 
-        self.horizontalLayout.addWidget(self.checkBox_2)
+        self.horizontalLayout.addWidget(self.cb_is_strict)
 
-        self.checkBox = QCheckBox(self.centralwidget)
-        self.checkBox.setObjectName(u"checkBox")
+        self.cb_is_match_case = QCheckBox(self.centralwidget)
+        self.cb_is_match_case.setObjectName(u"cb_is_match_case")
 
-        self.horizontalLayout.addWidget(self.checkBox)
+        self.horizontalLayout.addWidget(self.cb_is_match_case)
 
         self.horizontalSpacer = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
 
@@ -142,14 +145,15 @@ class Ui_MainWindow(object):
 
     def retranslateUi(self, MainWindow):
         MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"MainWindow", None))
-        self.le_input_search_text.setText(QCoreApplication.translate("MainWindow", u"1", None))
+        self.le_input_search_text.setText(QCoreApplication.translate("MainWindow", u"content", None))
         self.label_2.setText(QCoreApplication.translate("MainWindow", u"\u6587\u4ef6\u8fc7\u6ee4 : ", None))
         self.label_3.setText(QCoreApplication.translate("MainWindow", u"\u67e5\u627e\u5185\u5bb9 :", None))
         self.label.setText(QCoreApplication.translate("MainWindow", u"\u6253\u5f00\u76ee\u5f55 : ", None))
+        self.le_input_file_filter.setPlaceholderText(QCoreApplication.translate("MainWindow", u"input the file name ,you want , `!mail` represent doest search files which filename contain `mail`", None))
         self.btn_open_dir.setText(QCoreApplication.translate("MainWindow", u"\u6253\u5f00", None))
-        self.le_input_dir.setText(QCoreApplication.translate("MainWindow", u"D:/code/searchXlsGui/src/mock", None))
-        self.checkBox_2.setText(QCoreApplication.translate("MainWindow", u"\u4e25\u683c\u6a21\u5f0f", None))
-        self.checkBox.setText(QCoreApplication.translate("MainWindow", u"\u5927\u5c0f\u5199\u5339\u914d", None))
+        self.le_input_dir.setText(QCoreApplication.translate("MainWindow", u"D:/xls", None))
+        self.cb_is_strict.setText(QCoreApplication.translate("MainWindow", u"\u4e25\u683c\u6a21\u5f0f", None))
+        self.cb_is_match_case.setText(QCoreApplication.translate("MainWindow", u"\u5927\u5c0f\u5199\u5339\u914d", None))
         self.btn_search.setText(QCoreApplication.translate("MainWindow", u"\u641c\u7d22", None))
     # retranslateUi
 

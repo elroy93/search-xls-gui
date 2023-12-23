@@ -2,7 +2,9 @@
 # prettytable
 pyinstaller     # package
 # auto-py-to-exe
-qtmodern        # qt ui
+# qtmodern        # qt ui
 xlwings         # excel tool
 pyside6
-faker
+# faker
+# black           # code formatter
+pywin32

@@ -35,3 +35,18 @@ def file_match_filter(file_path, file_filter):
         return file_filter[1:] not in file_path
     # 否则, 必须包含匹配的字符串, 返回true
     return file_filter in file_path
+
+
+def cell_value_match(cell_value, search_text, is_strict, match_case):
+    cell_value = str(cell_value)
+    search_text = str(search_text)
+    if not search_text or search_text.isspace():
+        return True
+    if is_strict:
+        # 这里需要处理一下前后空格, 以及小数点后面的0
+        return search_text.strip() == cell_value.strip().rstrip("0").rstrip(".")
+    else:
+        if match_case:
+            return search_text.lower() in cell_value.lower()
+        else:
+            return search_text in cell_value

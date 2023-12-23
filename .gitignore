@@ -1,0 +1,5 @@
+/build/
+/env/
+/build/*/*
+/dist/
+/env/
