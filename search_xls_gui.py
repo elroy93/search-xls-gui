@@ -23,12 +23,11 @@ from PySide6.QtWidgets import (
     QAbstractItemView,
     QWidget,
     QPushButton,
-    QStyle,
 )
 from PySide6.QtWidgets import QMenu
 
-from src.ui.ui_search_widget import Ui_search_widget
 from src.ui.ui_main import Ui_MainWindow
+from src.ui.ui_search_widget import Ui_search_widget
 from src.utils import get_all_files_recursively_xls, cell_value_match, get_icon
 
 ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("starter")
@@ -441,13 +440,22 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.search_tab.addTab(button, "➕")
         # 当点击的是最后一个是PushButton时, 调用addTab函数
         self.search_tab.tabBarClicked.connect(self.onBarClicked)
-
+        # 调整tab的样式
+        self.search_tab.setStyleSheet(
+            """
+            QTabBar::tab {
+                background: rgb(230, 230, 230);
+                border: 1px solid lightgray;
+                padding: 3px;
+                min-width: 70px;
+            }
+            QTabBar::tab:selected {
+                background: white ;
+                margin-bottom: -1px;
+            }
+            """
+        )
         self.xls_app = None
-        #
-        # self.tab_widget = QTabWidget(self)  # 创建一个QTabWidget实例
-        # self.setCentralWidget(self.tab_widget)  # 将QTabWidget设置为主窗口的中心部件
-
-        # self.bind()
 
     def onBarClicked(self, index):
         widget = self.search_tab.widget(index)
