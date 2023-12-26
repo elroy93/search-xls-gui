@@ -1,3 +1,4 @@
+import ctypes
 import os
 import pickle
 import queue
@@ -6,12 +7,13 @@ import sys
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Generator
+
 import pythoncom
 import win32com.client as win32
 from PySide6.QtCore import QThread
 from PySide6.QtCore import QUrl
 from PySide6.QtCore import Signal, Qt
-from PySide6.QtGui import QDesktopServices, QAction, QIcon, QPixmap
+from PySide6.QtGui import QDesktopServices, QAction, QIcon
 from PySide6.QtWidgets import (
     QApplication,
     QMainWindow,
@@ -19,12 +21,15 @@ from PySide6.QtWidgets import (
     QTableWidgetItem,
     QHeaderView,
     QAbstractItemView,
+    QWidget,
+    QPushButton,
+    QStyle,
 )
 from PySide6.QtWidgets import QMenu
 
+from src.ui.ui_search_widget import Ui_search_widget
 from ui.ui_main import Ui_MainWindow
 from utils import get_all_files_recursively_xls, cell_value_match, get_icon
-import ctypes
 
 ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("starter")
 
@@ -67,18 +72,17 @@ class FoundCell:
         self.cell_value = cell_value
 
 
-class MainWindow(QMainWindow, Ui_MainWindow):
+class SearchWidget(QWidget, Ui_search_widget):
     singal_log_info = Signal(object)
     singal_log_error = Signal(object)
     single_write_to_table = Signal(object)
 
-    def __init__(self):
+    def __init__(self, parent=None):
         super().__init__()
+        self.parent = parent
         self.setupUi(self)
         self.setWindowTitle("searchXlsGui")
         self.setWindowIcon(QIcon(get_icon()))  # 设置图标
-
-        self.xls_app = None
         self.bind()
 
     def bind(self):
@@ -267,6 +271,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 search_thread.start()
                 thread_list.append(search_thread)
             self.thread_list = thread_list
+        # 获取当前 SearchWidget 在 QTabWidget 中的索引
+        index = self.parent.search_tab.indexOf(self)
+        # 将搜索文本内容设置为当前标签页的名称
+        self.parent.search_tab.setTabText(index, search_text)
 
     # def do_search_xlwings(self, params: SearchParams):
     #     with xw.App(visible=False, add_book=False) as xls_app:
@@ -412,6 +420,50 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def emit_write_to_table(self, found_cell: FoundCell):
         self.single_write_to_table.emit(found_cell)
+
+
+class MainWindow(QMainWindow, Ui_MainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setupUi(self)
+        self.setWindowTitle("searchXlsGui")
+        self.setWindowIcon(QIcon(get_icon()))  # 设置图标
+
+        self.search_tab.clear()
+        for i in range(1, 2):
+            tmp_tab = SearchWidget(self)
+            tmp_tab.setObjectName("tab" + str(i))
+            self.search_tab.addTab(tmp_tab, "tab" + str(i))
+        # tab的最后一个是个button
+        button = QPushButton(self)
+        self.search_tab.addTab(button, "➕")
+        # 当点击的是最后一个是PushButton时, 调用addTab函数
+        self.search_tab.tabBarClicked.connect(self.onBarClicked)
+
+        self.xls_app = None
+        #
+        # self.tab_widget = QTabWidget(self)  # 创建一个QTabWidget实例
+        # self.setCentralWidget(self.tab_widget)  # 将QTabWidget设置为主窗口的中心部件
+
+        # self.bind()
+
+    def onBarClicked(self, index):
+        widget = self.search_tab.widget(index)
+        if isinstance(widget, QPushButton):
+            print("QPushButton was clicked.")
+            self.addTab()
+        else:
+            print("Another widget was clicked.")
+
+    def addTab(self):
+        # 创建一个新的标签页
+        new_tab = SearchWidget(self)
+        # 获取标签页的索引
+        index = self.search_tab.count() - 1
+        # 在标签页中插入新标签页
+        self.search_tab.insertTab(index, new_tab, "tab" + str(index + 1))
+        # 将新标签页设为当前标签页
+        self.search_tab.setCurrentIndex(index)
 
 
 if __name__ == "__main__":
