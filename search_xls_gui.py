@@ -275,7 +275,7 @@ class SearchWidget(QWidget, Ui_search_widget):
         # 获取当前 SearchWidget 在 QTabWidget 中的索引
         index = self.parent.search_tab.indexOf(self)
         # 将搜索文本内容设置为当前标签页的名称
-        self.parent.search_tab.setTabText(index, search_text)
+        self.parent.search_tab.setTabText(index, f"{file_filter}:{search_text}")
 
     # def do_search_xlwings(self, params: SearchParams):
     #     with xw.App(visible=False, add_book=False) as xls_app:
