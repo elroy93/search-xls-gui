@@ -1,7 +1,7 @@
 # pywin32
 # prettytable
 pyinstaller     # package
-# auto-py-to-exe
+auto-py-to-exe
 # qtmodern        # qt ui
 xlwings         # excel tool
 pyside6

@@ -1,11 +1,11 @@
 import os
 import pickle
 import queue
+import subprocess
 import sys
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Generator
-
 import pythoncom
 import win32com.client as win32
 from PySide6.QtCore import QThread
@@ -23,7 +23,10 @@ from PySide6.QtWidgets import (
 from PySide6.QtWidgets import QMenu
 
 from ui.ui_main import Ui_MainWindow
-from utils import get_all_files_recursively_xls, cell_value_match
+from utils import get_all_files_recursively_xls, cell_value_match, get_icon
+import ctypes
+
+ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("starter")
 
 search_xls_store_file = ".search_xls_gui_store.pkl"
 
@@ -73,7 +76,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         super().__init__()
         self.setupUi(self)
         self.setWindowTitle("searchXlsGui")
-        # self.setWindowIcon(QIcon("search.ico"))
+        self.setWindowIcon(QIcon(get_icon()))  # 设置图标
+
         self.xls_app = None
         self.bind()
 
@@ -142,10 +146,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         selected_row = self.table_search_result.currentRow()
         # 获取选中行的文件路径
         file_path = self.table_search_result.item(selected_row, 0).text()
-        # 获取文件所在的文件夹路径
-        folder_path = os.path.dirname(file_path)
-        # 使用默认的应用程序打开文件夹
-        QDesktopServices.openUrl(QUrl.fromLocalFile(folder_path))
+        # 如果是windows系统
+        if sys.platform == "win32":
+            # 修改路径为windows格式的路径
+            file_path = file_path.replace("/", "\\")
+            subprocess.Popen(f'explorer /select,"{file_path}"')
+        else:
+            # 获取文件所在的文件夹路径
+            folder_path = os.path.dirname(file_path)
+            # 使用默认的应用程序打开文件夹
+            QDesktopServices.openUrl(QUrl.fromLocalFile(folder_path))
 
     def action_write_to_console(self, type, text):
         if type == "error":
@@ -319,8 +329,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         pythoncom.CoInitialize()
         # 启动Excel应用程序
         excel = win32.Dispatch("Excel.Application")
-        global global_excel
-        global_excel = excel
         # 设置Excel为后台运行
         excel.Visible = False
         excel.ScreenUpdating = False
@@ -392,6 +400,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                             if not cell or cell.GetAddress() == first_cell.GetAddress():
                                 break
             workbook.Close()
+        # 关闭应用
+        excel.Quit()
 
     def emit_log(self, text):
         print("info: " + text)

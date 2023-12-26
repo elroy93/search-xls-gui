@@ -1,4 +1,8 @@
+import base64
 import os
+
+from PySide6.QtGui import QPixmap
+from icon_search import icon_bytes
 
 
 # 递归获取目录下的所有文件, 返回一个生成器
@@ -50,3 +54,11 @@ def cell_value_match(cell_value, search_text, is_strict, match_case):
             return search_text.lower() in cell_value.lower()
         else:
             return search_text in cell_value
+
+
+# 图标bytes转成pixmap格式
+def get_icon():
+    icon_img = base64.b64decode(icon_bytes)  # 解码
+    icon_pixmap = QPixmap()  # 新建QPixmap对象
+    icon_pixmap.loadFromData(icon_img)  # 往QPixmap中写入数据
+    return icon_pixmap
