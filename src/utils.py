@@ -2,7 +2,7 @@ import base64
 import os
 
 from PySide6.QtGui import QPixmap
-from icon_search import icon_bytes
+from src.icon_search import icon_bytes
 
 
 # 递归获取目录下的所有文件, 返回一个生成器

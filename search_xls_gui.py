@@ -28,8 +28,8 @@ from PySide6.QtWidgets import (
 from PySide6.QtWidgets import QMenu
 
 from src.ui.ui_search_widget import Ui_search_widget
-from ui.ui_main import Ui_MainWindow
-from utils import get_all_files_recursively_xls, cell_value_match, get_icon
+from src.ui.ui_main import Ui_MainWindow
+from src.utils import get_all_files_recursively_xls, cell_value_match, get_icon
 
 ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("starter")
 
@@ -242,9 +242,11 @@ class SearchWidget(QWidget, Ui_search_widget):
             "is_strict": is_strict,
             "match_case": match_case,
         }
-        with open(search_xls_store_file, "wb") as f:
-            pickle.dump(store, f)
-
+        try:
+            with open(search_xls_store_file, "wb") as f:
+                pickle.dump(store, f)
+        except Exception as e:
+            pass
         # 先终止之前的线程
         old_thread_list = self.thread_list if hasattr(self, "thread_list") else []
         for thread in old_thread_list:

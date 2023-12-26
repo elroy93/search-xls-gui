@@ -4,14 +4,12 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="efd9bc8c-c916-4ff8-a383-c9483afd302e" name="Changes" comment="init2">
-      <change afterPath="$PROJECT_DIR$/src/ui/search_widget.ui" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/ui/ui_search_widget.py" afterDir="false" />
+    <list default="true" id="efd9bc8c-c916-4ff8-a383-c9483afd302e" name="Changes" comment="add tab">
       <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/search_xls_gui.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/search_xls_gui.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/ui/main.ui" beforeDir="false" afterPath="$PROJECT_DIR$/src/ui/main.ui" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/ui/ui_main.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/ui/ui_main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/search_xls_gui.spec" beforeDir="false" afterPath="$PROJECT_DIR$/search_xls_gui.spec" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/search_xls_gui.py" beforeDir="false" afterPath="$PROJECT_DIR$/search_xls_gui.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/utils.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -88,8 +86,11 @@
       <recent name="D:\projects\searchXlsGui" />
       <recent name="D:\projects\searchXlsGui\src" />
     </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="D:\projects\searchXlsGui" />
+    </key>
   </component>
-  <component name="RunManager" selected="Python.search_xls_gui (1)">
+  <component name="RunManager" selected="Batch.z_dist_exe">
     <configuration name="z_dist_exe" type="BatchConfigurationType" factoryName="Batch" temporary="true">
       <module name="searchXlsGui" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -140,12 +141,12 @@
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
       <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/src" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/src/search_xls_gui.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/search_xls_gui.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -168,7 +169,30 @@
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="D:\projects\searchXlsGui\src\search_xls_gui.py" />
+      <option name="SCRIPT_NAME" value="D:\projects\searchXlsGui\search_xls_gui.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="search_xls_gui" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="searchXlsGui" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/src" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="D:\projects\searchXlsGui\search_xls_gui.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -179,11 +203,11 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Batch.z_dist_exe" />
+        <item itemvalue="Python.search_xls_gui (1)" />
         <item itemvalue="Python.search_xls_gui (1)" />
         <item itemvalue="Batch.z_gen_ui_code" />
         <item itemvalue="Python.icon_convert" />
-        <item itemvalue="Batch.z_dist_exe" />
-        <item itemvalue="Python.search_xls_gui" />
       </list>
     </recent_temporary>
   </component>
@@ -207,7 +231,7 @@
       <workItem from="1703324805172" duration="205000" />
       <workItem from="1703325022210" duration="4410000" />
       <workItem from="1703577167171" duration="1339000" />
-      <workItem from="1703581118312" duration="4453000" />
+      <workItem from="1703581118312" duration="5463000" />
     </task>
     <task id="LOCAL-00001" summary="init2">
       <option name="closed" value="true" />
@@ -233,17 +257,26 @@
       <option name="project" value="LOCAL" />
       <updated>1703580207935</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="add tab">
+      <option name="closed" value="true" />
+      <created>1703585660953</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1703585660953</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
     <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
     <MESSAGE value="init2" />
-    <option name="LAST_COMMIT_MESSAGE" value="init2" />
+    <MESSAGE value="add tab" />
+    <option name="LAST_COMMIT_MESSAGE" value="add tab" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/searchXlsGui$main.coverage" NAME="main Coverage Results" MODIFIED="1703321993166" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
-    <SUITE FILE_PATH="coverage/searchXlsGui$search_xls_gui__1_.coverage" NAME="search_xls_gui (1) Coverage Results" MODIFIED="1703585385748" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
+    <SUITE FILE_PATH="coverage/searchXlsGui$search_xls_gui__1_.coverage" NAME="search_xls_gui (1) Coverage Results" MODIFIED="1703586506715" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/searchXlsGui$icon_convert.coverage" NAME="icon_convert Coverage Results" MODIFIED="1703476472488" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
   </component>
 </project>

@@ -2,11 +2,11 @@
 
 
 a = Analysis(
-    ['src\\search_xls_gui.py','src\\utils.py','src\\ui\\ui_main.py'],
+    ['search_xls_gui.py','src\\utils.py','src\\ui\\ui_main.py'],
     pathex=[],
     binaries=[],
     datas=[],
-    hiddenimports=['src'],
+    hiddenimports=['src.*','src.ui.*'],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
