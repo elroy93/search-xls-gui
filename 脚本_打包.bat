@@ -3,7 +3,7 @@ chcp 65001
 
 echo Creating virtual environment...
 
-python -m venv env
+python -m venv venv
 echo Activating virtual environment...
 call env\Scripts\activate
 
@@ -23,10 +23,11 @@ del search_xls_gui.exe
 :: pyinstaller --noconfirm --onefile --console --icon "./resource/search.ico" --distpath "." "./src/search_xls_gui.py" --noconsole
 pyinstaller search_xls_gui.spec
 
-move dist/search_xls_gui.exe ./
-
 :: 退出当前的虚拟环境
 echo Deactivating virtual environment...
 deactivate
+
+:: 打开dist目录
+explorer.exe dist
 
 pause

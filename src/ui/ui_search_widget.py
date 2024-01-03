@@ -24,7 +24,7 @@ class Ui_search_widget(object):
     def setupUi(self, search_widget):
         if not search_widget.objectName():
             search_widget.setObjectName(u"search_widget")
-        search_widget.resize(886, 720)
+        search_widget.resize(1263, 795)
         self.verticalLayout = QVBoxLayout(search_widget)
         self.verticalLayout.setObjectName(u"verticalLayout")
         self.input_grid = QGridLayout()
@@ -119,7 +119,7 @@ class Ui_search_widget(object):
         self.label_3.setText(QCoreApplication.translate("search_widget", u"\u67e5\u627e\u5185\u5bb9 :", None))
         self.le_input_dir.setText(QCoreApplication.translate("search_widget", u"D:/xls", None))
         self.btn_open_dir.setText(QCoreApplication.translate("search_widget", u"\u6253\u5f00", None))
-        self.le_input_file_filter.setPlaceholderText(QCoreApplication.translate("search_widget", u"input the file name ,you want , `!mail` represent doest search files which filename contain `mail`", None))
+        self.le_input_file_filter.setPlaceholderText(QCoreApplication.translate("search_widget", u"\u8f93\u5165\u60f3\u8981\u641c\u7d22\u7684\u6587\u4ef6\u90e8\u5206\u540d\u79f0; \u5982\u679c\u8f93\u5165\u611f\u53f9\u53f7\u5f00\u5934, \u5219\u8868\u793a\u4e0d\u641c\u7d22\u8be5\u6587\u4ef6. \u4f8b\u5982 `!\u90ae\u4ef6`\u5219\u8868\u793a\u4e0d\u641c\u7d22\u6587\u4ef6\u540d\u79f0\u5305\u542b`\u90ae\u4ef6`\u7684\u6587\u4ef6", None))
         self.label_2.setText(QCoreApplication.translate("search_widget", u"\u6587\u4ef6\u8fc7\u6ee4 : ", None))
     # retranslateUi
 

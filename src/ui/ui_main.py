@@ -22,7 +22,7 @@ class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         if not MainWindow.objectName():
             MainWindow.setObjectName(u"MainWindow")
-        MainWindow.resize(1139, 682)
+        MainWindow.resize(1341, 805)
         icon = QIcon()
         icon.addFile(u"../../resource/search.ico", QSize(), QIcon.Normal, QIcon.Off)
         MainWindow.setWindowIcon(icon)
@@ -37,6 +37,7 @@ class Ui_MainWindow(object):
         self.verticalLayout.setObjectName(u"verticalLayout")
         self.search_tab = QTabWidget(self.centralwidget)
         self.search_tab.setObjectName(u"search_tab")
+        self.search_tab.setTabsClosable(True)
         self.tab1 = QWidget()
         self.tab1.setObjectName(u"tab1")
         self.search_tab.addTab(self.tab1, "")
@@ -49,7 +50,7 @@ class Ui_MainWindow(object):
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QMenuBar(MainWindow)
         self.menubar.setObjectName(u"menubar")
-        self.menubar.setGeometry(QRect(0, 0, 1139, 22))
+        self.menubar.setGeometry(QRect(0, 0, 1341, 22))
         MainWindow.setMenuBar(self.menubar)
         self.statusbar = QStatusBar(MainWindow)
         self.statusbar.setObjectName(u"statusbar")

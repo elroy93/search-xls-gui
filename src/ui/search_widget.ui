@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>886</width>
-    <height>720</height>
+    <width>1263</width>
+    <height>795</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -95,7 +95,7 @@
      <item row="1" column="1">
       <widget class="QLineEdit" name="le_input_file_filter">
        <property name="placeholderText">
-        <string>input the file name ,you want , `!mail` represent doest search files which filename contain `mail`</string>
+        <string>输入想要搜索的文件部分名称; 如果输入感叹号开头, 则表示不搜索该文件. 例如 `!邮件`则表示不搜索文件名称包含`邮件`的文件</string>
        </property>
       </widget>
      </item>

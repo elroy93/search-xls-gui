@@ -4,6 +4,7 @@ import pickle
 import queue
 import subprocess
 import sys
+import time
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Generator
@@ -202,7 +203,7 @@ class SearchWidget(QWidget, Ui_search_widget):
         table_widget.setRowCount(rowCount + 1)
 
         for i, cell_value in enumerate(
-            (found_cell.path, found_cell.sheet, found_cell.cell, found_cell.cell_value)
+                (found_cell.path, found_cell.sheet, found_cell.cell, found_cell.cell_value)
         ):
             item = QTableWidgetItem(str(cell_value))
             item.setTextAlignment(Qt.AlignLeft | Qt.AlignVCenter)
@@ -213,6 +214,12 @@ class SearchWidget(QWidget, Ui_search_widget):
         dir_path = QFileDialog.getExistingDirectory(self, "Open Directory")
         if dir_path:  # 如果用户选择了一个目录
             self.le_input_dir.setText(dir_path)  # 将选中的目录路径设置到文本框中
+
+    def ui_stop_to_search(self):
+        # 停止的时候
+        self.btn_search.setStyleSheet("background-color: rgb(230, 230, 230)")
+        self.btn_search.setText("搜索")
+        self.emit_log("stop search")
 
     def ui_action_search(self):
         dir_path = self.le_input_dir.text()
@@ -251,166 +258,148 @@ class SearchWidget(QWidget, Ui_search_widget):
         for thread in old_thread_list:
             thread.terminate()
 
-        # 重置table
-        self.table_search_result.setRowCount(0)
-        self.emit_log("start search")
+        mode = self.btn_search.text()
+        if "停止" in mode:
+            self.ui_stop_to_search()
+        else:
+            self.btn_search.setStyleSheet("background-color: red")
+            self.btn_search.setText("停止")
+            # 获取当前 SearchWidget 在 QTabWidget 中的索引
+            index = self.parent.search_tab.indexOf(self)
+            # 将搜索文本内容设置为当前标签页的名称
+            self.parent.search_tab.setTabText(index, f"{file_filter}:{search_text}")
 
-        # 迭代器转成list
-        message_queue = queue.Queue()
-        self.file_walk_count = 0
-        self.file_count = 0
-        self.start_time = datetime.now()
-        self.end_time = 0
-        for file in params.files:
-            message_queue.put(file)
-            self.file_count += 1
-        # 开启多线程搜索
-        thread_list = []
-        if self.file_count > 0:
-            for i in range(0, 1):
-                search_thread = SearchThread(self, params, message_queue)
-                search_thread.start()
-                thread_list.append(search_thread)
-            self.thread_list = thread_list
-        # 获取当前 SearchWidget 在 QTabWidget 中的索引
-        index = self.parent.search_tab.indexOf(self)
-        # 将搜索文本内容设置为当前标签页的名称
-        self.parent.search_tab.setTabText(index, f"{file_filter}:{search_text}")
+            # 重置table
+            self.table_search_result.setRowCount(0)
+            self.emit_log("start search")
+            try:
+                with open(search_xls_store_file, "wb") as f:
+                    pickle.dump(store, f)
+            except Exception as e:
+                pass
+            # 先终止之前的线程
+            old_thread_list = self.thread_list if hasattr(self, "thread_list") else []
+            for thread in old_thread_list:
+                thread.terminate()
+            # 迭代器转成list
+            message_queue = queue.Queue()
+            self.file_walk_count = 0
+            self.file_count = 0
+            self.start_time = datetime.now()
+            self.end_time = 0
+            for file in params.files:
+                message_queue.put(file)
+                self.file_count += 1
+            # 开启多线程搜索
+            thread_list = []
+            if self.file_count > 0:
+                for i in range(0, 1):
+                    search_thread = SearchThread(self, params, message_queue)
+                    search_thread.start()
+                    thread_list.append(search_thread)
+                self.thread_list = thread_list
+            else :
+                self.emit_log("没有匹配的文件")
+                self.ui_stop_to_search()
 
-    # def do_search_xlwings(self, params: SearchParams):
-    #     with xw.App(visible=False, add_book=False) as xls_app:
-    #         self.emit_log("app start success !")
-    #         for file_path in params.files:
-    #             self.emit_log(f"searching {file_path}")
-    #             workbook = xls_app.books.open(file_path)
-    #             # 如果 params.search_text 是空的, 则只查找文件名
-    #             if not params.search_text or params.search_text.isspace():
-    #                 self.emit_log(f"\t {params.search_text} : {file_path}")
-    #                 self.emit_write_to_table(
-    #                     FoundCell(path=file_path, sheet="", cell="", cell_value="")
-    #                 )
-    #                 continue
-    #             else:
-    #                 for sheet in workbook.sheets:
-    #                     first_cell = sheet.api.UsedRange.Find(
-    #                         What=params.search_text,
-    #                         LookAt=1 if params.is_strict else 2,
-    #                         MatchCase=params.match_case,
-    #                     )
-    #                     if first_cell is not None:
-    #                         cell = first_cell
-    #                         while True:
-    #                             address = cell.GetAddress()
-    #                             cell_value = cell.Value
-    #                             self.emit_log(
-    #                                 f"\t {params.search_text} : {file_path} {sheet.name} - {address}"
-    #                             )
-    #                             # 写入到FoundCell
-    #                             if cell_value_match(
-    #                                 cell_value,
-    #                                 params.search_text,
-    #                                 params.is_strict,
-    #                                 params.match_case,
-    #                             ):
-    #                                 self.emit_write_to_table(
-    #                                     FoundCell(
-    #                                         path=file_path,
-    #                                         sheet=sheet.name,
-    #                                         cell=address,
-    #                                         cell_value=cell_value,
-    #                                     )
-    #                                 )
-    #                             # found_list.append((sheet.name, address, cell_value))
-    #                             cell = sheet.api.UsedRange.FindNext(cell)
-    #                             if (
-    #                                 not cell
-    #                                 or cell.GetAddress() == first_cell.GetAddress()
-    #                             ):
-    #                                 break
-    #             workbook.close()
-    #     self.emit_log("")
-    #     self.emit_log("")
-    #     self.emit_log(" ************************************* ")
-    #     self.emit_log(" *          search finished !        * ")
-    #     self.emit_log(" ************************************* ")
+
 
     def do_search_win32com(self, params: SearchParams, queue: queue.Queue):
-        pythoncom.CoInitialize()
-        # 启动Excel应用程序
-        excel = win32.Dispatch("Excel.Application")
-        # 设置Excel为后台运行
-        excel.Visible = False
-        excel.ScreenUpdating = False
-        excel.DisplayAlerts = False
-        excel.EnableEvents = False
-        excel.Interactive = False
-        # 取消excel的警告
-        excel.DisplayAlerts = False
-        excel.AskToUpdateLinks = False
+        try :
+            pythoncom.CoInitialize()
+            # 启动Excel应用程序
+            # excel = win32.Dispatch("Excel.Application")
+            # 设置Excel为后台运行
+            excel = win32.Dispatch("Excel.Application")
+            # 否则，新建一个Excel进程
+            excel.Visible = False
+            excel.ScreenUpdating = False
+            excel.DisplayAlerts = False
+            excel.EnableEvents = False
+            excel.Interactive = False
+            # 取消excel的警告
+            excel.DisplayAlerts = False
+            excel.AskToUpdateLinks = False
 
-        while True:
-            try:
-                file = queue.get_nowait()
-            except Exception as e:
-                file = None
-            if file is None:
-                print("-------------------------------- ")
-            if file is None and self.end_time == 0:
-                self.emit_log(" ************************************* ")
-                self.emit_log(" *          search finished !        * ")
-                self.emit_log(" ************************************* ")
-                self.end_time = datetime.now()
-                # 打印cost ms
-                self.emit_log(
-                    f"cost {(int)((self.end_time - self.start_time).total_seconds() * 1000)} ms"
-                )
-                break
-            self.file_walk_count += 1
-            file_walk = self.file_walk_count
-            # self.emit_log(f"searching {file}")
-            workbook = excel.Workbooks.Open(file)
-            # 如果 params.search_text 是空的, 则只查找文件名
-            self.emit_log(
-                f"\t ({file_walk}/{self.file_count})  search {params.search_text} : {file}"
-            )
-            if not params.search_text or params.search_text.isspace():
-                self.emit_write_to_table(
-                    FoundCell(path=file, sheet="", cell="", cell_value="")
-                )
-                continue
-            else:
-                for sheet in workbook.Sheets:
-                    first_cell = sheet.Cells.Find(
-                        What=params.search_text,
-                        LookAt=1 if params.is_strict else 2,
-                        MatchCase=params.match_case,
+            print("excel ,visiable = " + str(excel.Visible))
+            if excel.Visible:
+                excel.Visible = False
+
+            # 暂停500ms
+            time.sleep(0.5)
+
+            while True:
+                try:
+                    file = queue.get_nowait()
+                except Exception as e:
+                    file = None
+                if file is None:
+                    print("-------------------------------- ")
+                if file is None and self.end_time == 0:
+                    self.ui_stop_to_search()
+                    self.end_time = datetime.now()
+                    # 打印cost ms
+                    self.emit_log(
+                        f"cost {(int)((self.end_time - self.start_time).total_seconds() * 1000)} ms"
                     )
-                    if first_cell is not None:
-                        cell = first_cell
-                        while True:
-                            cell_value = cell.Value
-                            # 写入到FoundCell
-                            if cell_value_match(
-                                cell_value,
-                                params.search_text,
-                                params.is_strict,
-                                params.match_case,
-                            ):
-                                self.emit_write_to_table(
-                                    FoundCell(
-                                        path=file,
-                                        sheet=sheet.Name,
-                                        cell=cell.GetAddress(),
-                                        cell_value=cell_value,
+                    break
+                self.file_walk_count += 1
+                file_walk = self.file_walk_count
+                # self.emit_log(f"searching {file}")
+                workbook = excel.Workbooks.Open(file)
+                # 如果 params.search_text 是空的, 则只查找文件名
+                self.emit_log(
+                    f"\t ({file_walk}/{self.file_count})  search {params.search_text} : {file}"
+                )
+                if not params.search_text or params.search_text.isspace():
+                    self.emit_write_to_table(
+                        FoundCell(path=file, sheet="", cell="", cell_value="")
+                    )
+                    continue
+                else:
+                    for sheet in workbook.Sheets:
+                        first_cell = sheet.Cells.Find(
+                            What=params.search_text,
+                            LookAt=1 if params.is_strict else 2,
+                            MatchCase=params.match_case,
+                        )
+                        if first_cell is not None:
+                            cell = first_cell
+                            while True:
+                                cell_value = cell.Value
+                                # 写入到FoundCell
+                                if cell_value_match(
+                                        cell_value,
+                                        params.search_text,
+                                        params.is_strict,
+                                        params.match_case,
+                                ):
+                                    self.emit_write_to_table(
+                                        FoundCell(
+                                            path=file,
+                                            sheet=sheet.Name,
+                                            cell=cell.GetAddress(),
+                                            cell_value=cell_value,
+                                        )
                                     )
-                                )
-                            # found_list.append((sheet.name, address, cell_value))
-                            cell = sheet.Cells.FindNext(cell)
-                            if not cell or cell.GetAddress() == first_cell.GetAddress():
-                                break
-            workbook.Close()
-        # 关闭应用
-        excel.Quit()
+                                # found_list.append((sheet.name, address, cell_value))
+                                cell = sheet.Cells.FindNext(cell)
+                                if not cell or cell.GetAddress() == first_cell.GetAddress():
+                                    break
+                workbook.Close()
+            # 关闭应用
+            excel.Quit()
+        except Exception as e:
+            self.emit_error(str(e))
+        finally:
+            self.search_finished()
+
+    def search_finished(self):
+        self.emit_log(" ************************************* ")
+        self.emit_log(" *          search finished !        * ")
+        self.emit_log(" ************************************* ")
+        self.end_time = datetime.now()
+        self.ui_stop_to_search()
 
     def emit_log(self, text):
         print("info: " + text)
@@ -456,6 +445,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             """
         )
         self.xls_app = None
+        # 设置标签页可以关闭，并连接tabCloseRequested信号到removeTab槽函数
+        self.search_tab.setTabsClosable(True)
+        self.search_tab.tabCloseRequested.connect(self.removeTab)
+
+    def removeTab(self, index):
+        widget = self.search_tab.widget(index)
+        if isinstance(widget, QPushButton):
+            pass
+        else:
+            self.search_tab.removeTab(index)
 
     def onBarClicked(self, index):
         widget = self.search_tab.widget(index)

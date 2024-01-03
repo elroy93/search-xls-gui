@@ -1,10 +1,4 @@
-# pywin32
-# prettytable
-pyinstaller     # package
-auto-py-to-exe
-# qtmodern        # qt ui
-xlwings         # excel tool
-pyside6
-# faker
-# black           # code formatter
 pywin32
+pyinstaller
+pyside6
+openpyxl
