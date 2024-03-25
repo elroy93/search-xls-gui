@@ -10,9 +10,6 @@ from src.icon_search import icon_bytes
 def get_all_files_recursively_xls(path, file_filter):
     for root, dirs, files in os.walk(path):
         for file in files:
-            # 如果文件中路径中有xls_story,则跳过
-            if "xls_story_" in str(os.path.abspath(root)):
-                continue
             # ~$
             if file.startswith("~$"):
                 continue
