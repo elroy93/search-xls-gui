@@ -1,17 +1,15 @@
-import ctypes
 import os
 import pickle
-import queue
+import random
+import signal
 import subprocess
 import sys
-import time
-from dataclasses import dataclass
+import threading
+import uuid
 from datetime import datetime
-from typing import Generator
+from multiprocessing import Process
 
-import pythoncom
-import win32com.client as win32
-from PySide6.QtCore import QThread
+import zerorpc
 from PySide6.QtCore import QUrl
 from PySide6.QtCore import Signal, Qt
 from PySide6.QtGui import QDesktopServices, QAction, QIcon
@@ -27,50 +25,25 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtWidgets import QMenu
 
+from src.model import SearchParams, FoundCell
+from src.search_worker_client import SearchClientWorker
+from src.search_worker_server import SearchServerWorker
 from src.ui.ui_main import Ui_MainWindow
 from src.ui.ui_search_widget import Ui_search_widget
-from src.utils import get_all_files_recursively_xls, cell_value_match, get_icon
-
-ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("starter")
+from src.utils import get_all_files_recursively_xls, get_icon, find_free_port
 
 search_xls_store_file = ".search_xls_gui_store.pkl"
 
-
-class SearchThread(QThread):
-    def __init__(self, window, params, queue: queue.Queue):
-        QThread.__init__(self)
-        self.window = window
-        self.params = params
-        self.q = queue
-
-    def run(self):
-        # self.window.emit_log("new thread start search")
-        # self.window.do_search_xlwings(self.params)
-        self.window.do_search_win32com(self.params, self.q)
-
-
-@dataclass
-class SearchParams:
-    dir_path: str
-    search_text: str
-    is_strict: bool = False
-    match_case: bool = False
-    files: Generator = None
-
-
-@dataclass
-class FoundCell:
-    path: str
-    sheet: str
-    cell: object
-    cell_value: object = None
-
-    def __init__(self, path, sheet, cell, cell_value):
-        self.path = path
-        self.sheet = sheet
-        self.cell = cell
-        self.cell_value = cell_value
-
+def search_in_process(port, process_id, params: SearchParams, part_files):
+    """
+    在一个进程中搜索, 这里是在单独的进程中执行的
+    :param port:                进行通信的端口号
+    :param process_id:          一次搜索会开启多个进程,每个进程有一个id
+    """
+    # print("------------------- run search in process -------------------", process_id, params, part_files)
+    worker = SearchClientWorker(port, process_id)
+    worker.do_search_openpyxl(params, part_files)
+    worker.stop()
 
 class SearchWidget(QWidget, Ui_search_widget):
     singal_log_info = Signal(object)
@@ -81,8 +54,15 @@ class SearchWidget(QWidget, Ui_search_widget):
         super().__init__()
         self.parent = parent
         self.setupUi(self)
-        self.setWindowTitle("searchXlsGui")
+        self.setWindowTitle("search_xls_gui.exe")
         self.setWindowIcon(QIcon(get_icon()))  # 设置图标
+
+        # 异步的初始化一个rpc server
+        self.port = find_free_port()
+        # 从 4242 开始找一个可用的端
+        self.serverStarter = SearchWorkerStarter(self, self.port)
+        self.thread = threading.Thread(target=self.serverStarter.run)
+        self.thread.start()
         self.bind()
 
     def bind(self):
@@ -141,7 +121,7 @@ class SearchWidget(QWidget, Ui_search_widget):
         # 获取选中的行
         selected_row = self.table_search_result.currentRow()
         # 获取选中行的文件路径
-        file_path = self.table_search_result.item(selected_row, 0).text()
+        file_path = self.table_search_result.item(selected_row, 0).toolTip()
         # 使用默认的应用程序打开文件
         QDesktopServices.openUrl(QUrl.fromLocalFile(file_path))
 
@@ -149,7 +129,7 @@ class SearchWidget(QWidget, Ui_search_widget):
         # 获取选中的行
         selected_row = self.table_search_result.currentRow()
         # 获取选中行的文件路径
-        file_path = self.table_search_result.item(selected_row, 0).text()
+        file_path = self.table_search_result.item(selected_row, 0).toolTip()
         # 如果是windows系统
         if sys.platform == "win32":
             # 修改路径为windows格式的路径
@@ -175,13 +155,25 @@ class SearchWidget(QWidget, Ui_search_widget):
         table_widget = self.table_search_result
         # self.emit_log("table_widget.rowCount() = " + str(table_widget.rowCount()))
         if table_widget.rowCount() == 0:
-            headers = ("path", "sheet", "cell", "cell_value")
-            colum_width_ratio = (4, 1, 1, 1)
+            headers = ("path", "sheet", "cell", "cell_value", "row")
+            colum_width_ratio = (15, 10, 8, 20, 40)
             table_widget.setColumnCount(len(headers))
             table_widget.setHorizontalHeaderLabels(headers)
             table_widget.horizontalHeader().setStyleSheet(
-                "QHeaderView::section { background-color: lightgrey }"
+                "QHeaderView::section { background-color: rgb(242, 242, 242) }"
             )
+            # 自定义工具提示样式
+            tooltip_style = """
+            QToolTip {
+                background-color: yellow;
+                color: black;
+                border: 1px solid black;
+            }
+            QTableWidget::item:hover {
+                background-color: lightblue;
+            }
+            """
+            table_widget.setStyleSheet(tooltip_style)
             table_widget.horizontalHeader().setStretchLastSection(True)
             # 只能选中行,不能选中单元格
             table_widget.setSelectionBehavior(QAbstractItemView.SelectRows)
@@ -203,9 +195,13 @@ class SearchWidget(QWidget, Ui_search_widget):
         table_widget.setRowCount(rowCount + 1)
 
         for i, cell_value in enumerate(
-                (found_cell.path, found_cell.sheet, found_cell.cell, found_cell.cell_value)
+                (found_cell.path, found_cell.sheet, found_cell.cell, found_cell.cell_value, found_cell.row_all)
         ):
-            item = QTableWidgetItem(str(cell_value))
+            if i == 0:
+                file_name = os.path.basename(cell_value)
+                item = QTableWidgetItem(file_name)
+            else:
+                item = QTableWidgetItem(str(cell_value))
             item.setTextAlignment(Qt.AlignLeft | Qt.AlignVCenter)
             item.setToolTip(str(cell_value))
             table_widget.setItem(rowCount, i, item)
@@ -220,6 +216,7 @@ class SearchWidget(QWidget, Ui_search_widget):
         self.btn_search.setStyleSheet("background-color: rgb(230, 230, 230)")
         self.btn_search.setText("搜索")
         self.emit_log("stop search")
+        self.serverStarter.search_worker.files.clear()
 
     def ui_action_search(self):
         dir_path = self.le_input_dir.text()
@@ -231,14 +228,13 @@ class SearchWidget(QWidget, Ui_search_widget):
         is_strict = self.cb_is_strict.isChecked()
         match_case = self.cb_is_match_case.isChecked()
         print("filter_filter = " + file_filter)
-        files = get_all_files_recursively_xls(dir_path, file_filter)
+        file_generator = get_all_files_recursively_xls(dir_path, file_filter)
 
         params = SearchParams(
             dir_path=dir_path,
             search_text=search_text,
             is_strict=is_strict,
             match_case=match_case,
-            files=files,
         )
         # 保存参数到文件
         store = {
@@ -282,124 +278,48 @@ class SearchWidget(QWidget, Ui_search_widget):
             for thread in old_thread_list:
                 thread.terminate()
             # 迭代器转成list
-            message_queue = queue.Queue()
             self.file_walk_count = 0
             self.file_count = 0
             self.start_time = datetime.now()
             self.end_time = 0
-            for file in params.files:
-                message_queue.put(file)
+            files = []
+            for file in file_generator:
+                files.append(file)
                 self.file_count += 1
-            # 开启多线程搜索
-            thread_list = []
+
+            # files 打散
+            # 按照文件大小进行排序, 先搜索小的文件
+            files.sort(key=lambda x: os.path.getsize(x))
+            # random.shuffle(files)
+            # 设置为cpu*2
+            thread_num = os.cpu_count()
+
+            self.serverStarter.search_file_count.clear()
+            self.serverStarter.search_file_count.append(self.file_count)
+            self.serverStarter.search_worker.reset()
+            self.serverStarter.search_worker.set_thread_num(thread_num)
+            self.serverStarter.search_worker.files.clear()
+            self.serverStarter.search_worker.files.extend(files)
+            # 开启多进程搜索
+            self.emit_log("--- 开始搜索 --- ")
             if self.file_count > 0:
-                for i in range(0, 1):
-                    search_thread = SearchThread(self, params, message_queue)
-                    search_thread.start()
-                    thread_list.append(search_thread)
-                self.thread_list = thread_list
-            else :
+                for i in range(thread_num):
+                    # print("start = " + str(start) + ", end = " + str(end))
+                    # 开启第一个进程
+                    thread = Process(
+                        target=search_in_process,
+                        args=(
+                            self.port,
+                            i,
+                            params,
+                            []
+                        ),
+                    )
+                    thread.start()
+            else:
                 self.emit_log("没有匹配的文件")
                 self.ui_stop_to_search()
-
-
-
-    def do_search_win32com(self, params: SearchParams, queue: queue.Queue):
-        try :
-            pythoncom.CoInitialize()
-            # 启动Excel应用程序
-            # excel = win32.Dispatch("Excel.Application")
-            # 设置Excel为后台运行
-            excel = win32.Dispatch("Excel.Application")
-            # 否则，新建一个Excel进程
-            excel.Visible = False
-            excel.ScreenUpdating = False
-            excel.DisplayAlerts = False
-            excel.EnableEvents = False
-            excel.Interactive = False
-            # 取消excel的警告
-            excel.DisplayAlerts = False
-            excel.AskToUpdateLinks = False
-
-            print("excel ,visiable = " + str(excel.Visible))
-            if excel.Visible:
-                excel.Visible = False
-
-            # 暂停500ms
-            time.sleep(0.5)
-
-            while True:
-                try:
-                    file = queue.get_nowait()
-                except Exception as e:
-                    file = None
-                if file is None:
-                    print("-------------------------------- ")
-                if file is None and self.end_time == 0:
-                    self.ui_stop_to_search()
-                    self.end_time = datetime.now()
-                    # 打印cost ms
-                    self.emit_log(
-                        f"cost {(int)((self.end_time - self.start_time).total_seconds() * 1000)} ms"
-                    )
-                    break
-                self.file_walk_count += 1
-                file_walk = self.file_walk_count
-                # self.emit_log(f"searching {file}")
-                workbook = excel.Workbooks.Open(file)
-                # 如果 params.search_text 是空的, 则只查找文件名
-                self.emit_log(
-                    f"\t ({file_walk}/{self.file_count})  search {params.search_text} : {file}"
-                )
-                if not params.search_text or params.search_text.isspace():
-                    self.emit_write_to_table(
-                        FoundCell(path=file, sheet="", cell="", cell_value="")
-                    )
-                    continue
-                else:
-                    for sheet in workbook.Sheets:
-                        first_cell = sheet.Cells.Find(
-                            What=params.search_text,
-                            LookAt=1 if params.is_strict else 2,
-                            MatchCase=params.match_case,
-                        )
-                        if first_cell is not None:
-                            cell = first_cell
-                            while True:
-                                cell_value = cell.Value
-                                # 写入到FoundCell
-                                if cell_value_match(
-                                        cell_value,
-                                        params.search_text,
-                                        params.is_strict,
-                                        params.match_case,
-                                ):
-                                    self.emit_write_to_table(
-                                        FoundCell(
-                                            path=file,
-                                            sheet=sheet.Name,
-                                            cell=cell.GetAddress(),
-                                            cell_value=cell_value,
-                                        )
-                                    )
-                                # found_list.append((sheet.name, address, cell_value))
-                                cell = sheet.Cells.FindNext(cell)
-                                if not cell or cell.GetAddress() == first_cell.GetAddress():
-                                    break
-                workbook.Close()
-            # 关闭应用
-            excel.Quit()
-        except Exception as e:
-            self.emit_error(str(e))
-        finally:
-            self.search_finished()
-
-    def search_finished(self):
-        self.emit_log(" ************************************* ")
-        self.emit_log(" *          search finished !        * ")
-        self.emit_log(" ************************************* ")
-        self.end_time = datetime.now()
-        self.ui_stop_to_search()
+            self.emit_log("--- 进程开启结束 --- ")
 
     def emit_log(self, text):
         print("info: " + text)
@@ -412,11 +332,35 @@ class SearchWidget(QWidget, Ui_search_widget):
         self.single_write_to_table.emit(found_cell)
 
 
+class SearchWorkerStarter(object):
+    def __init__(self, search_widget, port):
+        self.search_widget = search_widget
+        self.port = port
+        self.search_file_count = []
+        self.search_worker = SearchServerWorker(self.search_widget, self.search_file_count)
+        self.search_widget.emit_log("start rpc server port : " + str(port))
+        self.rpc_uuid = uuid.uuid1()
+
+    def run(self):
+        self.server = zerorpc.Server(self.search_worker)
+        self.server.bind("tcp://127.0.0.1:" + str(self.port))
+        self.server.run()
+
+    def rpc_server_stop(self):
+        try:
+            self.server.close()
+        except Exception as e:
+            pass
+
+    def get_uuid(self):
+        return self.rpc_uuid
+
+
 class MainWindow(QMainWindow, Ui_MainWindow):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
-        self.setWindowTitle("searchXlsGui")
+        self.setWindowTitle("search_xls_gui.exe")
         self.setWindowIcon(QIcon(get_icon()))  # 设置图标
 
         self.search_tab.clear()
@@ -449,11 +393,21 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.search_tab.setTabsClosable(True)
         self.search_tab.tabCloseRequested.connect(self.removeTab)
 
+    def closeEvent(self, event):
+        # Perform your action here
+        print("MainWindow is being closed")
+        # Call the parent class's closeEvent method to do the actual closing
+        super().closeEvent(event)
+        # 关闭当前进程及子进程
+        os.kill(os.getpid(), signal.SIGTERM)
+
     def removeTab(self, index):
         widget = self.search_tab.widget(index)
         if isinstance(widget, QPushButton):
             pass
         else:
+            search_widget = self.search_tab.widget(index)
+            search_widget.serverStarter.rpc_server_stop()
             self.search_tab.removeTab(index)
 
     def onBarClicked(self, index):
@@ -476,6 +430,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
 
 if __name__ == "__main__":
+    import multiprocessing
+
+    multiprocessing.freeze_support()
     app = QApplication(sys.argv)
     window = MainWindow()
     window.show()

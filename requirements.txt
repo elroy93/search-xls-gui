@@ -1,4 +1,8 @@
-pywin32
 pyinstaller
 pyside6
-openpyxl
+openpyxl==3.0.10
+# vthread
+zerorpc
+urllib3
+requests
+PyJWT

@@ -11,7 +11,7 @@ a = Analysis(
     hooksconfig={},
     runtime_hooks=[],
     excludes=['faker','pyinstaller'],
-    noarchive=False,
+    noarchive=True,  # 修改此处
 )
 pyz = PYZ(a.pure)
 
@@ -35,4 +35,5 @@ exe = EXE(
     codesign_identity=None,
     entitlements_file=None,
     icon=['resource\\search.ico'],
+    onefile=False,  # 添加此行
 )
