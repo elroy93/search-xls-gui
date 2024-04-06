@@ -1,10 +1,10 @@
-# SearchXlsGui 搜索excel中的内容 
+# search-xls-gui
 
-## 介绍 
+## 介绍 | Introduction
+- search text in excel files . 
+- 源于游戏项目中多使用excel进行数值配置,  开发此工具在多个excel中进行搜索相关文本 
 
-源于游戏项目中多使用excel进行数值配置,  开发此工具在多个excel中进行搜索相关文本 
-
-## 使用
+## 使用 | How to use 
 
 **搜索**
 1. 选中要搜索的文件夹
@@ -21,7 +21,7 @@
 
 
 
-## 技术栈
+## 技术栈 | third libs
 - pyside6 : qt界面
 - openxls : 读取excel的内容
 - zerorpc : qt多页面的通信
